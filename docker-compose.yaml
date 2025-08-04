@@ -1,0 +1,20 @@
+version: '3.8'
+services:
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: qdrant-db
+    ports:
+      - "6333:6333" # REST API
+      - "6334:6334" # gRPC API
+    environment:
+      - QDRANT__SERVICE__HTTP_PORT=6333
+      - QDRANT__SERVICE__GRPC_PORT=6334
+      - QDRANT__SERVICE__ENABLE_CORS=true
+      - QDRANT__SERVICE__API_KEY=21969628-d915-4dbe-82ee-25604d9adae2
+      - QDRANT__TELEMETRY_DISABLED=true
+    volumes:
+      - qdrant_data:/qdrant/storage
+    restart: unless-stopped
+
+volumes:
+  qdrant_data:
