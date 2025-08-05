@@ -1,103 +1,180 @@
-import Image from "next/image";
+'use client';
+
+import { useState } from 'react';
+import FileUpload from '@/components/FileUpload';
+import ProductSearch from '@/components/ProductSearch';
+import { Database, Search, TrendingUp, ShoppingBag } from 'lucide-react';
+
+interface Product {
+  id: number;
+  score: number;
+  text: string;
+  metadata?: Record<string, any>;
+}
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [uploadedCount, setUploadedCount] = useState<number | null>(null);
+  const [searchResults, setSearchResults] = useState<Product[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [activeTab, setActiveTab] = useState<'upload' | 'search'>('upload');
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const handleUploadSuccess = (count: number) => {
+    setUploadedCount(count);
+    setActiveTab('search');
+  };
+
+  const handleSearch = async (query: string) => {
+    setIsSearching(true);
+    try {
+      const response = await fetch('/api/search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ query, limit: 20 }),
+      });
+
+      const data = await response.json();
+      
+      if (response.ok) {
+        setSearchResults(data.recommendations);
+      } else {
+        console.error('Search failed:', data.error);
+        setSearchResults([]);
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center space-x-2 mb-4">
+            <ShoppingBag className="w-8 h-8 text-blue-600" />
+            <h1 className="text-3xl font-bold text-gray-900">
+              E-commerce Recommendation System
+            </h1>
+          </div>
+          <p className="text-gray-600 max-w-2xl mx-auto">
+            Upload your product CSV data and discover intelligent product recommendations 
+            powered by AI and vector search technology.
+          </p>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        {/* Stats */}
+        {uploadedCount !== null && (
+          <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
+            <div className="flex items-center justify-center space-x-2 text-green-600">
+              <Database className="w-5 h-5" />
+              <span className="font-medium">
+                {uploadedCount} products loaded in the database
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Tab Navigation */}
+        <div className="flex justify-center mb-8">
+          <div className="bg-white rounded-lg shadow-sm p-1">
+            <div className="flex space-x-1">
+              <button
+                onClick={() => setActiveTab('upload')}
+                className={`px-6 py-3 rounded-md font-medium transition-colors ${
+                  activeTab === 'upload'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Upload Data
+              </button>
+              <button
+                onClick={() => setActiveTab('search')}
+                className={`px-6 py-3 rounded-md font-medium transition-colors ${
+                  activeTab === 'search'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Search Products
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="max-w-7xl mx-auto">
+          {activeTab === 'upload' ? (
+            <div className="space-y-8">
+              <div className="text-center">
+                <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+                  Upload Your Product Data
+                </h2>
+                <p className="text-gray-600 mb-8">
+                  Upload a CSV file containing your product information. 
+                  The system will automatically process and index your products.
+                </p>
+              </div>
+              <FileUpload onUploadSuccess={handleUploadSuccess} />
+            </div>
+          ) : (
+            <div className="space-y-8">
+              <div className="text-center">
+                <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+                  Search & Discover Products
+                </h2>
+                <p className="text-gray-600 mb-8">
+                  Search for products using natural language. 
+                  Get intelligent recommendations with match percentages.
+                </p>
+              </div>
+              <ProductSearch
+                onSearch={handleSearch}
+                results={searchResults}
+                isLoading={isSearching}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Features */}
+        <div className="mt-16 grid md:grid-cols-3 gap-8">
+          <div className="bg-white rounded-lg p-6 shadow-sm">
+            <div className="flex items-center space-x-3 mb-4">
+              <Database className="w-8 h-8 text-blue-600" />
+              <h3 className="text-lg font-semibold">Vector Database</h3>
+            </div>
+            <p className="text-gray-600">
+              Powered by Qdrant vector database for lightning-fast semantic search and similarity matching.
+            </p>
+          </div>
+          
+          <div className="bg-white rounded-lg p-6 shadow-sm">
+            <div className="flex items-center space-x-3 mb-4">
+              <Search className="w-8 h-8 text-green-600" />
+              <h3 className="text-lg font-semibold">AI-Powered Search</h3>
+            </div>
+            <p className="text-gray-600">
+              Uses Google Gemini embeddings for intelligent product matching and recommendation scoring.
+            </p>
+          </div>
+          
+          <div className="bg-white rounded-lg p-6 shadow-sm">
+            <div className="flex items-center space-x-3 mb-4">
+              <TrendingUp className="w-8 h-8 text-purple-600" />
+              <h3 className="text-lg font-semibold">Smart Recommendations</h3>
+            </div>
+            <p className="text-gray-600">
+              Get percentage-based match scores to understand how well products align with your search.
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
